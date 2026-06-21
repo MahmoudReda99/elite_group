@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: elite_group
+      POSTGRES_USER: elite
+      POSTGRES_PASSWORD: elite_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elite -d elite_group"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://elite:elite_password@postgres:5432/elite_group?schema=public
+      JWT_SECRET: local-development-secret-change-me
+      JWT_EXPIRES_IN: 8h
+      FRONTEND_URL: http://localhost:4200
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/api:/workspace/apps/api
+      - /workspace/node_modules
+      - /workspace/apps/api/node_modules
+    command: sh -c "npm run prisma:generate -w @elite-group/api && npm run prisma:migrate -w @elite-group/api && npm run prisma:seed -w @elite-group/api && npm run start:dev -w @elite-group/api"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./apps/web:/workspace/apps/web
+      - /workspace/node_modules
+      - /workspace/apps/web/node_modules
+    command: sh -c "npm run start -w @elite-group/web -- --host 0.0.0.0"
+
+volumes:
+  postgres_data:

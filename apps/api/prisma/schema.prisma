@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
+enum FreightStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TrackingStatus {
+  BOOKING_RECEIVED
+  VESSEL_SCHEDULED
+  DEPARTED
+  TRANSSHIPMENT
+  ARRIVED
+  CUSTOMS_CLEARANCE
+  DELIVERED
+}
+
+enum MessageStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id              String           @id @default(cuid())
+  name            String
+  email           String           @unique
+  passwordHash    String
+  role            UserRole
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  createdServices FreightService[] @relation("FreightServiceCreatedBy")
+  updatedServices FreightService[] @relation("FreightServiceUpdatedBy")
+  auditLogs       AuditLog[]
+}
+
+model FreightService {
+  id                 String        @id @default(cuid())
+  title              String
+  originCountry      String
+  originPort         String
+  destinationCountry String
+  destinationPort    String
+  tradeLane          String
+  cargoType          String
+  containerType      String
+  vesselName         String
+  voyageNumber       String
+  etd                DateTime
+  eta                DateTime
+  scheduleMonth      String
+  validFrom          DateTime
+  validTo            DateTime
+  oceanFreight       Decimal       @db.Decimal(12, 2)
+  thc                Decimal       @db.Decimal(12, 2)
+  currency           String        @default("USD")
+  freeTimeNotes      String?
+  remarks            String?
+  status             FreightStatus @default(DRAFT)
+  createdById        String?
+  updatedById        String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  createdBy          User?         @relation("FreightServiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy          User?         @relation("FreightServiceUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([status, scheduleMonth])
+  @@index([destinationCountry, cargoType, containerType])
+}
+
+model ContainerType {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  description  String
+  capacityInfo String
+  active       Boolean @default(true)
+}
+
+model ServiceCategory {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String
+  active      Boolean @default(true)
+}
+
+model CompanyProfile {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  address     String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrackingRecord {
+  id              String          @id @default(cuid())
+  trackingNumber  String          @unique
+  customerName    String
+  originPort      String
+  destinationPort String
+  vesselName      String?
+  voyageNumber    String?
+  currentStatus   TrackingStatus  @default(BOOKING_RECEIVED)
+  published       Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  events          TrackingEvent[]
+}
+
+model TrackingEvent {
+  id               String         @id @default(cuid())
+  trackingRecordId String
+  status           TrackingStatus
+  location         String
+  eventDate        DateTime
+  notes            String?
+  trackingRecord   TrackingRecord @relation(fields: [trackingRecordId], references: [id], onDelete: Cascade)
+
+  @@index([trackingRecordId, eventDate])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  action       String
+  entityType   String
+  entityId     String
+  metadataJson Json?
+  createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  message   String
+  status    MessageStatus @default(NEW)
+  createdAt DateTime      @default(now())
+}
+
+model QuoteRequest {
+  id              String        @id @default(cuid())
+  name            String
+  email           String
+  phone           String?
+  company         String?
+  originPort      String
+  destinationPort String
+  cargoType       String
+  containerType   String
+  readyDate       DateTime?
+  message         String?
+  status          MessageStatus @default(NEW)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}

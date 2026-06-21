@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.angular/
+.env
+.env.local
+coverage/
+tmp/
+*.log
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal

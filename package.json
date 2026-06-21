@@ -1,0 +1,27 @@
+{
+  "name": "elite-group",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Elite Group freight forwarding MVP with Angular, NestJS, PostgreSQL, and Prisma.",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "docker compose up --build",
+    "dev:detached": "docker compose up --build -d",
+    "db:up": "docker compose up -d postgres",
+    "api:dev": "npm run start:dev -w @elite-group/api",
+    "web:dev": "npm run start -w @elite-group/web",
+    "build": "npm run build -w @elite-group/api && npm run build -w @elite-group/web",
+    "test": "npm run test -w @elite-group/api && npm run test -w @elite-group/web",
+    "test:api:e2e": "npm run test:e2e -w @elite-group/api",
+    "prisma:generate": "npm run prisma:generate -w @elite-group/api",
+    "prisma:migrate": "npm run prisma:migrate -w @elite-group/api",
+    "prisma:seed": "npm run prisma:seed -w @elite-group/api"
+  },
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=10.0.0"
+  }
+}
