@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { LIVE_REFRESH_INTERVAL_MS } from '../../core/live-refresh';
 import { CompanyProfile, ContainerType } from '../../core/models';
 
 @Component({
@@ -66,9 +68,10 @@ import { CompanyProfile, ContainerType } from '../../core/models';
     </section>
   `
 })
-export class ContactComponent implements OnInit {
+export class ContactComponent implements OnInit, OnDestroy {
   companyProfile?: CompanyProfile;
   containers: ContainerType[] = [];
+  private refreshSubscription?: Subscription;
   contact = { name: '', email: '', phone: '', company: '', message: '' };
   quote = {
     name: '',
@@ -88,6 +91,15 @@ export class ContactComponent implements OnInit {
   constructor(private readonly api: ApiService) {}
 
   ngOnInit() {
+    this.loadPublicData();
+    this.refreshSubscription = interval(LIVE_REFRESH_INTERVAL_MS).subscribe(() => this.loadPublicData());
+  }
+
+  ngOnDestroy() {
+    this.refreshSubscription?.unsubscribe();
+  }
+
+  private loadPublicData() {
     this.api.companyProfile().subscribe((companyProfile) => {
       this.companyProfile = companyProfile || undefined;
     });

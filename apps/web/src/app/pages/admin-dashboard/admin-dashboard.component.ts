@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { LIVE_REFRESH_INTERVAL_MS } from '../../core/live-refresh';
 import { TrackingRecord, User } from '../../core/models';
 
 interface GroupCount {
@@ -136,10 +138,11 @@ interface DashboardStats {
     </section>
   `
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   stats: DashboardStats = {};
   users: User[] = [];
   trackingRecords: TrackingRecord[] = [];
+  private refreshSubscription?: Subscription;
   userForm = {
     name: '',
     email: '',
@@ -151,6 +154,11 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.load();
+    this.refreshSubscription = interval(LIVE_REFRESH_INTERVAL_MS).subscribe(() => this.load());
+  }
+
+  ngOnDestroy() {
+    this.refreshSubscription?.unsubscribe();
   }
 
   load() {

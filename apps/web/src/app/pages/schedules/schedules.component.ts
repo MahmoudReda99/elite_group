@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { LIVE_REFRESH_INTERVAL_MS } from '../../core/live-refresh';
 import { ContainerType, FreightService } from '../../core/models';
 
 @Component({
@@ -80,9 +82,10 @@ import { ContainerType, FreightService } from '../../core/models';
     </section>
   `
 })
-export class SchedulesComponent implements OnInit {
+export class SchedulesComponent implements OnInit, OnDestroy {
   services: FreightService[] = [];
   containers: ContainerType[] = [];
+  private refreshSubscription?: Subscription;
   filters = {
     month: '',
     destination: '',
@@ -93,11 +96,16 @@ export class SchedulesComponent implements OnInit {
   constructor(private readonly api: ApiService) {}
 
   ngOnInit() {
-    this.api.containers().subscribe((containers) => (this.containers = containers));
     this.load();
+    this.refreshSubscription = interval(LIVE_REFRESH_INTERVAL_MS).subscribe(() => this.load());
+  }
+
+  ngOnDestroy() {
+    this.refreshSubscription?.unsubscribe();
   }
 
   load() {
+    this.api.containers().subscribe((containers) => (this.containers = containers));
     this.api.publicFreightServices(this.filters).subscribe((services) => {
       this.services = services;
     });

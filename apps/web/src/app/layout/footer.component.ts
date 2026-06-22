@@ -13,14 +13,12 @@ import { RouterLink } from '@angular/router';
       </section>
       <section>
         <h3>Services</h3>
-        <a routerLink="/services">Ocean freight</a>
-        <a routerLink="/services">Reefer cargo</a>
-        <a routerLink="/services">Inland transportation</a>
-        <a routerLink="/services">Customs support</a>
+        <a routerLink="/services/containers">Containers</a>
+        <a routerLink="/services/inland-transportation">Inland Transportation</a>
+        <a routerLink="/services/customs-solutions">Customs Support & Solutions</a>
       </section>
       <section>
         <h3>Quick Links</h3>
-        <a routerLink="/schedules">Schedules</a>
         <a routerLink="/tracking">Tracking</a>
         <a routerLink="/contact">Request a quote</a>
       </section>

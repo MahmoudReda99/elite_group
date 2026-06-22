@@ -35,6 +35,14 @@ enum MessageStatus {
   CLOSED
 }
 
+enum ContainerCatalogGroup {
+  DRY
+  OPEN_TOP_HARDTOP
+  SPECIAL
+  REEFER
+  TANK
+}
+
 model User {
   id              String           @id @default(cuid())
   name            String
@@ -89,6 +97,30 @@ model ContainerType {
   description  String
   capacityInfo String
   active       Boolean @default(true)
+}
+
+model ContainerCatalogItem {
+  id                String                @id @default(cuid())
+  slug              String                @unique
+  group             ContainerCatalogGroup
+  categorySlug      String                @default("dry-cargo")
+  categoryName      String                @default("Dry Cargo container")
+  subgroupName      String                @default("Standard")
+  subgroupSortOrder Int                   @default(0)
+  illustrationKey   String                @default("dry")
+  name              String
+  summary           String
+  useCase           String
+  imageAsset        String?
+  sortOrder         Int                   @default(0)
+  active            Boolean               @default(true)
+  specsJson         Json
+  notesJson         Json
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([active, group, sortOrder])
+  @@index([active, categorySlug, subgroupSortOrder, sortOrder])
 }
 
 model ServiceCategory {

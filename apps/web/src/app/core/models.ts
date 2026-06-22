@@ -56,6 +56,45 @@ export interface ContainerType {
   capacityInfo: string;
 }
 
+export type ContainerCatalogGroup = 'DRY' | 'OPEN_TOP_HARDTOP' | 'SPECIAL' | 'REEFER' | 'TANK';
+
+export interface ContainerCatalogMetric {
+  label: string;
+  value: string;
+  detail?: string;
+}
+
+export interface ContainerCatalogSpecs {
+  dimensions: ContainerCatalogMetric[];
+  doorOpenings?: ContainerCatalogMetric[];
+  weights: ContainerCatalogMetric[];
+  capacity?: ContainerCatalogMetric;
+}
+
+export interface ContainerCatalogNotes {
+  disclaimer: string;
+  notes: string[];
+}
+
+export interface ContainerCatalogItem {
+  id: string;
+  slug: string;
+  group: ContainerCatalogGroup;
+  categorySlug: string;
+  categoryName: string;
+  subgroupName: string;
+  subgroupSortOrder: number;
+  illustrationKey: string;
+  name: string;
+  summary: string;
+  useCase: string;
+  imageAsset?: string;
+  sortOrder: number;
+  active: boolean;
+  specsJson: ContainerCatalogSpecs;
+  notesJson: ContainerCatalogNotes;
+}
+
 export interface ServiceCategory {
   id: string;
   name: string;

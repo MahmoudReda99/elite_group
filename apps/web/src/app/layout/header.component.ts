@@ -12,14 +12,13 @@ import { AuthService } from '../core/auth.service';
         <img src="assets/images/elite-logo.jpeg" alt="Elite Group logo">
         <span>
           <strong>Elite Group</strong>
-          <small>Shipping · Supply · Solutions</small>
+          <small>Shipping &middot; Supply &middot; Solutions</small>
         </span>
       </a>
 
       <nav aria-label="Primary navigation">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
         <a routerLink="/services" routerLinkActive="active">Services</a>
-        <a routerLink="/schedules" routerLinkActive="active">Schedules</a>
         <a routerLink="/tracking" routerLinkActive="active">Tracking</a>
         <a routerLink="/contact" routerLinkActive="active">Contact</a>
         @if (user()) {

@@ -21,6 +21,16 @@ export class FreightServicesController {
     return this.freightServicesService.listContainers();
   }
 
+  @Get('public/container-catalog')
+  listContainerCatalog() {
+    return this.freightServicesService.listContainerCatalog();
+  }
+
+  @Get('public/container-catalog/:slug')
+  getContainerCatalogItem(@Param('slug') slug: string) {
+    return this.freightServicesService.getContainerCatalogItem(slug);
+  }
+
   @Get('public/service-categories')
   listCategories() {
     return this.freightServicesService.listCategories();

@@ -107,6 +107,25 @@ export class FreightServicesService {
     });
   }
 
+  listContainerCatalog() {
+    return this.prisma.containerCatalogItem.findMany({
+      where: { active: true },
+      orderBy: [{ categorySlug: 'asc' }, { subgroupSortOrder: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }]
+    });
+  }
+
+  async getContainerCatalogItem(slug: string) {
+    const item = await this.prisma.containerCatalogItem.findFirst({
+      where: { slug, active: true }
+    });
+
+    if (!item) {
+      throw new NotFoundException('Container catalogue item not found');
+    }
+
+    return item;
+  }
+
   listCategories() {
     return this.prisma.serviceCategory.findMany({
       where: { active: true },

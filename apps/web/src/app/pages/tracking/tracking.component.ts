@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { LIVE_REFRESH_INTERVAL_MS } from '../../core/live-refresh';
 import { TrackingRecord, TrackingStatus } from '../../core/models';
 
 @Component({
@@ -56,19 +58,44 @@ import { TrackingRecord, TrackingStatus } from '../../core/models';
     </section>
   `
 })
-export class TrackingComponent {
+export class TrackingComponent implements OnInit, OnDestroy {
   trackingNumber = 'ELT-2026-0001';
   record: TrackingRecord | null = null;
   error = '';
+  private activeTrackingNumber = '';
+  private refreshSubscription?: Subscription;
 
   constructor(private readonly api: ApiService) {}
 
+  ngOnInit() {
+    this.refreshSubscription = interval(LIVE_REFRESH_INTERVAL_MS).subscribe(() => {
+      if (this.record && this.activeTrackingNumber) {
+        this.loadRecord(false);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.refreshSubscription?.unsubscribe();
+  }
+
   search() {
+    this.activeTrackingNumber = this.trackingNumber.trim();
+    this.loadRecord(true);
+  }
+
+  private loadRecord(reset: boolean) {
     this.error = '';
-    this.record = null;
-    this.api.trackingLookup(this.trackingNumber.trim()).subscribe({
+    if (reset) {
+      this.record = null;
+    }
+
+    this.api.trackingLookup(this.activeTrackingNumber).subscribe({
       next: (record) => (this.record = record),
-      error: () => (this.error = 'No published tracking record found for this reference.')
+      error: () => {
+        this.record = null;
+        this.error = 'No published tracking record found for this reference.';
+      }
     });
   }
 

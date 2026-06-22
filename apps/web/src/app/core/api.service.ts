@@ -5,6 +5,7 @@ import { environment } from './environment';
 import {
   ContactMessage,
   CompanyProfile,
+  ContainerCatalogItem,
   ContainerType,
   DatabaseRow,
   DatabaseTable,
@@ -58,6 +59,14 @@ export class ApiService {
 
   containers(): Observable<ContainerType[]> {
     return this.http.get<ContainerType[]>(`${this.apiUrl}/public/container-types`);
+  }
+
+  containerCatalog(): Observable<ContainerCatalogItem[]> {
+    return this.http.get<ContainerCatalogItem[]>(`${this.apiUrl}/public/container-catalog`);
+  }
+
+  containerCatalogItem(slug: string): Observable<ContainerCatalogItem> {
+    return this.http.get<ContainerCatalogItem>(`${this.apiUrl}/public/container-catalog/${slug}`);
   }
 
   categories(): Observable<ServiceCategory[]> {

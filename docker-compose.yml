@@ -48,7 +48,7 @@ services:
       - ./apps/web:/workspace/apps/web
       - /workspace/node_modules
       - /workspace/apps/web/node_modules
-    command: sh -c "npm run start -w @elite-group/web -- --host 0.0.0.0"
+    command: sh -c "npm run start -w @elite-group/web -- --host 0.0.0.0 --poll 2000"
 
 volumes:
   postgres_data:

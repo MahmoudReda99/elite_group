@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { LIVE_REFRESH_INTERVAL_MS } from '../../core/live-refresh';
 import {
   ContactMessage,
   ContainerType,
@@ -190,12 +192,13 @@ type TrackingForm = Omit<TrackingRecord, 'id' | 'events'>;
     </section>
   `
 })
-export class OperatorDashboardComponent implements OnInit {
+export class OperatorDashboardComponent implements OnInit, OnDestroy {
   services: FreightService[] = [];
   quotes: QuoteRequest[] = [];
   contacts: ContactMessage[] = [];
   trackingRecords: TrackingRecord[] = [];
   containers: ContainerType[] = [];
+  private refreshSubscription?: Subscription;
   filters = { month: '', destination: '', cargoType: '', containerType: '' };
   editingServiceId = '';
   serviceForm: ServiceForm = this.emptyServiceForm();
@@ -205,6 +208,11 @@ export class OperatorDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.load();
+    this.refreshSubscription = interval(LIVE_REFRESH_INTERVAL_MS).subscribe(() => this.load());
+  }
+
+  ngOnDestroy() {
+    this.refreshSubscription?.unsubscribe();
   }
 
   load() {

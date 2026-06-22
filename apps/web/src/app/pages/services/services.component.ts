@@ -1,77 +1,64 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiService } from '../../core/api.service';
-import { ContainerType, ServiceCategory } from '../../core/models';
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { CONTAINER_CATEGORIES } from './container-catalog-ui';
 
 @Component({
   selector: 'eg-services',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <section class="page-hero compact">
       <p class="eyebrow">Services</p>
-      <h1>Ocean freight, container solutions, and Middle East inland support.</h1>
+      <h1>Container equipment, inland transportation, and customs support for practical freight operations.</h1>
     </section>
 
-    <section class="section">
-      <div class="service-grid">
-        @for (service of services; track service.slug) {
-          <article>
-            <h2>{{ service.name }}</h2>
-            <p>{{ service.description }}</p>
-          </article>
+    <section class="section brief-section">
+      <p class="eyebrow">What We Offer</p>
+      <h2>Elite Group helps shippers choose the right equipment, move cargo across the Middle East, and handle port or airport work with clear operational support.</h2>
+    </section>
+
+    <section class="section offering-section">
+      <div class="offering-grid">
+        <a routerLink="/services/containers" class="service-offering">
+          <img class="service-offering-image" src="assets/images/services/container-dry-cargo.png" alt="Container equipment">
+          <h2>Containers</h2>
+          <p>Dry, reefer, special, open top, flat rack, platform, and tank equipment details.</p>
+          <strong>Learn more</strong>
+        </a>
+        <a routerLink="/services/inland-transportation" class="service-offering">
+          <img class="service-offering-image" src="assets/images/services/truck-fleet-middle-east.png" alt="Inland transportation fleet">
+          <h2>Inland Transportation</h2>
+          <p>Truck planning across the Middle East for containers, general cargo, and project cargo.</p>
+          <strong>Learn more</strong>
+        </a>
+        <a routerLink="/services/customs-solutions" class="service-offering">
+          <img class="service-offering-image" src="assets/images/services/port-air-customs-solutions.png" alt="Port and airport operations">
+          <h2>Customs Support & Solutions</h2>
+          <p>Port, airport, documentation, clearance, inspection, and issue-resolution support.</p>
+          <strong>Learn more</strong>
+        </a>
+      </div>
+    </section>
+
+    <section class="section muted container-overview-section">
+      <div class="container-section-title">
+        <h2>Our Containers</h2>
+        <span></span>
+        <p>We provide a mix of container types to suit cargo planning requirements, with clear information for dimensions, openings, weight, and capacity.</p>
+      </div>
+      <div class="container-category-grid">
+        @for (category of categories; track category.slug) {
+          <a class="container-category-card" [routerLink]="['/services/containers', category.slug]">
+            <img class="container-card-image" [src]="category.image" [alt]="category.name">
+            <h3>{{ category.name }}</h3>
+            <strong>Learn more</strong>
+          </a>
         }
       </div>
-    </section>
-
-    <section class="section muted">
-      <div class="section-title">
-        <p class="eyebrow">Our Containers</p>
-        <h2>Equipment options for general, refrigerated, oversized, and special cargo.</h2>
-      </div>
-      <div class="container-grid">
-        @for (container of containers; track container.id) {
-          <article>
-            <h3>{{ container.name }}</h3>
-            <p>{{ container.description }}</p>
-            <strong>{{ container.capacityInfo }}</strong>
-          </article>
-        }
-      </div>
-    </section>
-
-    <section class="section split">
-      <div>
-        <p class="eyebrow">Our Global Inland Services in the Middle East</p>
-        <h2>Port-to-door coordination for regional freight movement.</h2>
-      </div>
-      <p>Elite Group supports inland transportation from major ports to customer facilities, combining truck planning, customs/logistics coordination, and shipment status updates for operational teams.</p>
     </section>
   `
 })
-export class ServicesComponent implements OnInit {
-  services: ServiceCategory[] = [
-    { id: 'reefer', name: 'Reefer Cargo', slug: 'reefer-cargo', description: 'Cold chain support for chilled and frozen cargo with equipment coordination.' },
-    { id: 'special', name: 'Special Cargo', slug: 'special-cargo', description: 'Project cargo and non-standard equipment planning for complex shipments.' },
-    { id: 'dg', name: 'Dangerous Goods', slug: 'dangerous-goods', description: 'Documentation-led support for compliant hazardous cargo movement.' },
-    { id: 'ocean', name: 'Ocean Freight', slug: 'ocean-freight', description: 'FCL and LCL ocean freight schedules and monthly rate visibility.' },
-    { id: 'inland', name: 'Inland Transportation', slug: 'inland-transportation', description: 'Truck and intermodal coordination across key Middle East lanes.' },
-    { id: 'customs', name: 'Customs / Logistics Support', slug: 'customs-logistics-support', description: 'Documentation, clearance coordination, and operational shipment support.' }
-  ];
-  containers: ContainerType[] = [];
-
-  constructor(private readonly api: ApiService) {}
-
-  ngOnInit() {
-    this.api.categories().subscribe((services) => {
-      if (services.length) {
-        this.services = services;
-      }
-    });
-    this.api.containers().subscribe((containers) => {
-      if (containers.length) {
-        this.containers = containers;
-      }
-    });
-  }
+export class ServicesComponent {
+  readonly categories = CONTAINER_CATEGORIES;
 }

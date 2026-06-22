@@ -1,8 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { LIVE_REFRESH_INTERVAL_MS } from '../../core/live-refresh';
 import { DatabaseField, DatabaseRow, DatabaseTable } from '../../core/models';
+
+interface LoadRowsOptions {
+  resetSelection: boolean;
+}
 
 @Component({
   selector: 'eg-admin-database',
@@ -159,7 +165,7 @@ import { DatabaseField, DatabaseRow, DatabaseTable } from '../../core/models';
     </section>
   `
 })
-export class AdminDatabaseComponent implements OnInit {
+export class AdminDatabaseComponent implements OnInit, OnDestroy {
   tables: DatabaseTable[] = [];
   rows: DatabaseRow[] = [];
   selectedTable?: DatabaseTable;
@@ -167,6 +173,7 @@ export class AdminDatabaseComponent implements OnInit {
   form: Record<string, unknown> = {};
   message = '';
   error = '';
+  private refreshSubscription?: Subscription;
 
   constructor(private readonly api: ApiService) {}
 
@@ -180,11 +187,16 @@ export class AdminDatabaseComponent implements OnInit {
       },
       error: () => (this.error = 'Could not load database tables.')
     });
+    this.refreshSubscription = interval(LIVE_REFRESH_INTERVAL_MS).subscribe(() => this.reload());
+  }
+
+  ngOnDestroy() {
+    this.refreshSubscription?.unsubscribe();
   }
 
   reload() {
     if (this.selectedTable) {
-      this.loadRows(this.selectedTable);
+      this.loadRows(this.selectedTable, { resetSelection: false });
     }
   }
 
@@ -194,13 +206,19 @@ export class AdminDatabaseComponent implements OnInit {
     this.form = {};
     this.message = '';
     this.error = '';
-    this.loadRows(table);
+    this.loadRows(table, { resetSelection: true });
   }
 
-  loadRows(table: DatabaseTable) {
+  loadRows(table: DatabaseTable, options: LoadRowsOptions = { resetSelection: true }) {
     this.api.databaseRows(table.key).subscribe({
       next: (rows) => {
         this.rows = rows;
+
+        if (!options.resetSelection) {
+          this.syncSelectedRow(rows);
+          return;
+        }
+
         if (table.create === false && rows.length) {
           this.editRow(rows[0]);
         } else {
@@ -243,7 +261,7 @@ export class AdminDatabaseComponent implements OnInit {
     request.subscribe({
       next: () => {
         this.message = this.selectedRow ? 'Row updated.' : 'Row created.';
-        this.loadRows(this.selectedTable as DatabaseTable);
+        this.loadRows(this.selectedTable as DatabaseTable, { resetSelection: true });
       },
       error: (response) => {
         this.error = response?.error?.message || 'Database change failed.';
@@ -259,7 +277,7 @@ export class AdminDatabaseComponent implements OnInit {
     this.api.deleteDatabaseRow(this.selectedTable.key, this.selectedRow.id).subscribe({
       next: () => {
         this.message = 'Row deleted.';
-        this.loadRows(this.selectedTable as DatabaseTable);
+        this.loadRows(this.selectedTable as DatabaseTable, { resetSelection: true });
       },
       error: (response) => {
         this.error = response?.error?.message || 'Delete failed.';
@@ -332,5 +350,25 @@ export class AdminDatabaseComponent implements OnInit {
     }
 
     return value;
+  }
+
+  private syncSelectedRow(rows: DatabaseRow[]) {
+    if (!this.selectedRow) {
+      return;
+    }
+
+    const updatedRow = rows.find((row) => row.id === this.selectedRow?.id);
+    if (updatedRow) {
+      this.selectedRow = updatedRow;
+      return;
+    }
+
+    this.selectedRow = undefined;
+    if (this.selectedTable?.create === false && rows.length) {
+      this.editRow(rows[0]);
+      return;
+    }
+
+    this.startCreate();
   }
 }

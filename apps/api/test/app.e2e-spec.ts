@@ -73,7 +73,12 @@ describe('Elite Group API', () => {
         findMany: jest.fn()
       },
       containerType: {
-        findMany: jest.fn()
+        findMany: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue({ id: 'container-type-1' })
+      },
+      containerCatalogItem: {
+        findMany: jest.fn(),
+        findFirst: jest.fn()
       },
       serviceCategory: {
         findMany: jest.fn()
@@ -195,6 +200,55 @@ describe('Elite Group API', () => {
         where: expect.objectContaining({ status: 'PUBLISHED', scheduleMonth: '2026-07' })
       })
     );
+  });
+
+  it('returns active container catalogue items from the public read-only endpoint', async () => {
+    prisma.containerCatalogItem.findMany.mockResolvedValue([
+      { id: 'catalog-1', slug: '20-standard-dry', group: 'DRY', active: true, sortOrder: 10 }
+    ]);
+
+    const response = await request(app.getHttpServer()).get('/api/public/container-catalog').expect(200);
+
+    expect(response.body).toHaveLength(1);
+    expect(prisma.containerCatalogItem.findMany).toHaveBeenCalledWith({
+      where: { active: true },
+      orderBy: [{ categorySlug: 'asc' }, { subgroupSortOrder: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }]
+    });
+  });
+
+  it('returns one active container catalogue item by slug and 404s missing items', async () => {
+    prisma.containerCatalogItem.findFirst.mockResolvedValueOnce({
+      id: 'catalog-1',
+      slug: '40-high-cube-dry',
+      active: true
+    });
+
+    await request(app.getHttpServer()).get('/api/public/container-catalog/40-high-cube-dry').expect(200);
+
+    expect(prisma.containerCatalogItem.findFirst).toHaveBeenCalledWith({
+      where: { slug: '40-high-cube-dry', active: true }
+    });
+
+    prisma.containerCatalogItem.findFirst.mockResolvedValueOnce(null);
+    await request(app.getHttpServer()).get('/api/public/container-catalog/missing').expect(404);
+  });
+
+  it('does not expose the container catalogue through the admin database editor', async () => {
+    const adminToken = await tokenFor(adminUser.email);
+    prisma.containerType.findMany.mockResolvedValue([]);
+
+    const response = await request(app.getHttpServer())
+      .get('/api/admin/database/tables')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(response.body.some((table: { key: string }) => table.key.includes('container-catalog'))).toBe(false);
+
+    await request(app.getHttpServer())
+      .post('/api/admin/database/container-catalog-items/rows')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({})
+      .expect(404);
   });
 
   it('looks up published tracking records and hides private references', async () => {

@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "ContainerCatalogItem_active_categorySlug_subgroupSortOrder_sort" RENAME TO "ContainerCatalogItem_active_categorySlug_subgroupSortOrder__idx";
