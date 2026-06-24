@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { ApiService } from './api.service';
-import { User } from './models';
+import { RegisterCustomerPayload, User } from './models';
 
 const tokenKey = 'elite_group_access_token';
 const userKey = 'elite_group_user';
@@ -18,11 +18,13 @@ export class AuthService {
 
   login(email: string, password: string) {
     return this.api.login(email, password).pipe(
-      tap((response) => {
-        localStorage.setItem(tokenKey, response.accessToken);
-        localStorage.setItem(userKey, JSON.stringify(response.user));
-        this.currentUser.set(response.user);
-      })
+      tap((response) => this.setSession(response.accessToken, response.user))
+    );
+  }
+
+  registerCustomer(payload: RegisterCustomerPayload) {
+    return this.api.registerCustomer(payload).pipe(
+      tap((response) => this.setSession(response.accessToken, response.user))
     );
   }
 
@@ -46,8 +48,25 @@ export class AuthService {
     return this.currentUser()?.role === 'ADMIN';
   }
 
+  isCustomer() {
+    return this.currentUser()?.role === 'CUSTOMER';
+  }
+
   dashboardUrl() {
-    return this.isAdmin() ? '/admin' : '/operator';
+    const role = this.currentUser()?.role;
+    if (role === 'ADMIN') {
+      return '/admin';
+    }
+    if (role === 'OPERATOR') {
+      return '/operator';
+    }
+    return '/contact';
+  }
+
+  private setSession(accessToken: string, user: User) {
+    localStorage.setItem(tokenKey, accessToken);
+    localStorage.setItem(userKey, JSON.stringify(user));
+    this.currentUser.set(user);
   }
 
   private readUser(): User | null {

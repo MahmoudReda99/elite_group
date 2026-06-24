@@ -25,9 +25,9 @@ import { TRANSPORT_TYPES } from './container-catalog-ui';
           <article>
             <div class="service-image-shell">
               <img class="service-real-image" [src]="truck.image" [alt]="truck.name" [style.object-position]="truck.imagePosition">
-              @if (truck.brand) {
+              <!-- @if (truck.brand) {
                 <span>Elite Group</span>
-              }
+              } -->
             </div>
             <h2>{{ truck.name }}</h2>
             <p>{{ truck.summary }}</p>

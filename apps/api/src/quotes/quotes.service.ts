@@ -1,5 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
+import { AuthenticatedUser } from '../common/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuoteRequestDto, UpdateQuoteStatusDto } from './dto';
 
@@ -10,9 +11,24 @@ export class QuotesService {
     private readonly audit: AuditService
   ) {}
 
-  async create(dto: CreateQuoteRequestDto) {
+  async create(dto: CreateQuoteRequestDto, user: AuthenticatedUser) {
     await this.ensureActiveContainerType(dto.containerType);
-    return this.prisma.quoteRequest.create({ data: dto });
+
+    const customer = await this.prisma.customer.findUnique({ where: { userId: user.id } });
+    if (!customer) {
+      throw new NotFoundException('Customer profile not found');
+    }
+
+    return this.prisma.quoteRequest.create({
+      data: {
+        ...dto,
+        customerId: customer.id,
+        name: dto.name || `${customer.firstName} ${customer.lastName}`.trim(),
+        email: customer.email,
+        phone: dto.phone || customer.phoneNumber,
+        company: dto.company || customer.companyName
+      }
+    });
   }
 
   findAll() {

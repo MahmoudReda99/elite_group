@@ -37,7 +37,7 @@ const trackingStatuses = [
   'DELIVERED'
 ];
 const messageStatuses = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
-const roles = ['ADMIN', 'OPERATOR'];
+const roles = ['ADMIN', 'OPERATOR', 'CUSTOMER'];
 
 const systemFields: FieldConfig[] = [
   { key: 'id', label: 'ID', type: 'string', readOnly: true },
@@ -59,6 +59,27 @@ const tables: TableConfig[] = [
       { key: 'email', label: 'Email', type: 'string', required: true },
       { key: 'role', label: 'Role', type: 'enum', enumValues: roles, required: true },
       { key: 'active', label: 'Active', type: 'boolean', required: true }
+    ]
+  },
+  {
+    key: 'customers',
+    label: 'Customers',
+    delegate: 'customer',
+    orderBy: { createdAt: 'desc' },
+    create: false,
+    delete: false,
+    fields: [
+      ...systemFields,
+      { key: 'userId', label: 'User ID', type: 'string', readOnly: true },
+      { key: 'firstName', label: 'First name', type: 'string', required: true },
+      { key: 'lastName', label: 'Last name', type: 'string', required: true },
+      { key: 'email', label: 'Email', type: 'string', required: true },
+      { key: 'countryCode', label: 'Country code', type: 'string', required: true },
+      { key: 'phoneNumber', label: 'Phone number', type: 'string', required: true },
+      { key: 'companyName', label: 'Company name', type: 'string', required: true },
+      { key: 'streetAddress', label: 'Street address', type: 'string', required: true },
+      { key: 'city', label: 'City', type: 'string', required: true },
+      { key: 'countryRegion', label: 'Country / Region', type: 'string', required: true }
     ]
   },
   {
@@ -157,6 +178,7 @@ const tables: TableConfig[] = [
     delete: false,
     fields: [
       ...systemFields,
+      { key: 'customerId', label: 'Customer ID', type: 'string', readOnly: true },
       { key: 'name', label: 'Name', type: 'string', required: true },
       { key: 'email', label: 'Email', type: 'string', required: true },
       { key: 'phone', label: 'Phone', type: 'string', required: true },

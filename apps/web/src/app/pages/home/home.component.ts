@@ -13,7 +13,7 @@ import { CONTAINER_CATEGORIES } from '../services/container-catalog-ui';
         <h1>Elite Group</h1>
         <p class="hero-copy">Container equipment, inland transportation, and customs support across the Middle East.</p>
         <div class="actions">
-          <a routerLink="/contact" class="primary">Request a quote</a>
+          <a routerLink="/login" [queryParams]="{ returnUrl: '/contact', intent: 'quote' }" class="primary">Request a quote</a>
         </div>
       </div>
     </section>

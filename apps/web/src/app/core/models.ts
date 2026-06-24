@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'OPERATOR';
+export type UserRole = 'ADMIN' | 'OPERATOR' | 'CUSTOMER';
 export type FreightStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export type TrackingStatus =
   | 'BOOKING_RECEIVED'
@@ -20,6 +20,35 @@ export interface User {
 export interface LoginResponse {
   accessToken: string;
   user: User;
+}
+
+export interface RegisterCustomerPayload {
+  firstName: string;
+  lastName: string;
+  countryCode: string;
+  phoneNumber: string;
+  companyName: string;
+  streetAddress: string;
+  city: string;
+  countryRegion: string;
+  email: string;
+  password: string;
+}
+
+export interface Customer {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  countryCode: string;
+  phoneNumber: string;
+  companyName: string;
+  streetAddress: string;
+  city: string;
+  countryRegion: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FreightService {
@@ -146,6 +175,7 @@ export interface ContactMessage {
 
 export interface QuoteRequest {
   id: string;
+  customerId?: string;
   name: string;
   email: string;
   phone?: string;

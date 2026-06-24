@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { LIVE_REFRESH_INTERVAL_MS } from '../../core/live-refresh';
 import { CompanyProfile, ContainerType } from '../../core/models';
 
@@ -45,24 +47,34 @@ import { CompanyProfile, ContainerType } from '../../core/models';
 
       <form class="tool-panel quote-panel" (ngSubmit)="sendQuote()">
         <h2>Request a quote</h2>
-        <input name="quoteName" [(ngModel)]="quote.name" placeholder="Name" required>
-        <input name="quoteEmail" [(ngModel)]="quote.email" placeholder="Email" type="email" required>
-        <input name="quotePhone" [(ngModel)]="quote.phone" placeholder="Phone">
-        <input name="quoteCompany" [(ngModel)]="quote.company" placeholder="Company">
-        <input name="originPort" [(ngModel)]="quote.originPort" placeholder="Origin port" required>
-        <input name="destinationPort" [(ngModel)]="quote.destinationPort" placeholder="Destination port" required>
-        <input name="cargoType" [(ngModel)]="quote.cargoType" placeholder="Cargo type" required>
-        <select name="containerType" [(ngModel)]="quote.containerType" required>
-          <option value="" disabled>Select container type</option>
-          @for (container of containers; track container.id) {
-            <option [value]="container.name">{{ container.name }}</option>
-          }
-        </select>
-        <input name="readyDate" [(ngModel)]="quote.readyDate" type="date">
-        <textarea name="quoteMessage" [(ngModel)]="quote.message" placeholder="Cargo notes"></textarea>
-        <button type="submit">Request quote</button>
+        @if (!auth.currentUser()) {
+          <p class="quote-login-copy">Please log in or sign up before requesting a quote.</p>
+          <button type="button" (click)="goToQuoteLogin()">Log in to request quote</button>
+        } @else if (auth.currentUser()?.role !== 'CUSTOMER') {
+          <p class="form-error">Please use a customer account to request a quote.</p>
+        } @else {
+          <input name="quoteName" [(ngModel)]="quote.name" placeholder="Name" required>
+          <input name="quoteEmail" [(ngModel)]="quote.email" placeholder="Email" type="email" required>
+          <input name="quotePhone" [(ngModel)]="quote.phone" placeholder="Phone">
+          <input name="quoteCompany" [(ngModel)]="quote.company" placeholder="Company">
+          <input name="originPort" [(ngModel)]="quote.originPort" placeholder="Origin port" required>
+          <input name="destinationPort" [(ngModel)]="quote.destinationPort" placeholder="Destination port" required>
+          <input name="cargoType" [(ngModel)]="quote.cargoType" placeholder="Cargo type" required>
+          <select name="containerType" [(ngModel)]="quote.containerType" required>
+            <option value="" disabled>Select container type</option>
+            @for (container of containers; track container.id) {
+              <option [value]="container.name">{{ container.name }}</option>
+            }
+          </select>
+          <input name="readyDate" [(ngModel)]="quote.readyDate" type="date">
+          <textarea name="quoteMessage" [(ngModel)]="quote.message" placeholder="Cargo notes"></textarea>
+          <button type="submit">Request quote</button>
+        }
         @if (quoteSaved) {
           <p class="form-success">Quote request created successfully. You will receive the answer via mail or phone call.</p>
+        }
+        @if (quoteError) {
+          <p class="form-error">{{ quoteError }}</p>
         }
       </form>
     </section>
@@ -87,8 +99,13 @@ export class ContactComponent implements OnInit, OnDestroy {
   };
   contactSaved = false;
   quoteSaved = false;
+  quoteError = '';
 
-  constructor(private readonly api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    readonly auth: AuthService,
+    private readonly router: Router
+  ) {}
 
   ngOnInit() {
     this.loadPublicData();
@@ -104,6 +121,11 @@ export class ContactComponent implements OnInit, OnDestroy {
       this.companyProfile = companyProfile || undefined;
     });
     this.api.containers().subscribe((containers) => (this.containers = containers));
+    this.prefillQuoteIdentity();
+  }
+
+  goToQuoteLogin() {
+    void this.router.navigate(['/login'], { queryParams: { returnUrl: '/contact', intent: 'quote' } });
   }
 
   sendContact() {
@@ -114,6 +136,22 @@ export class ContactComponent implements OnInit, OnDestroy {
   }
 
   sendQuote() {
+    const user = this.auth.currentUser();
+    this.quoteError = '';
+
+    if (!user) {
+      this.goToQuoteLogin();
+      return;
+    }
+
+    if (user.role !== 'CUSTOMER') {
+      this.quoteError = 'Please use a customer account to request a quote.';
+      return;
+    }
+
+    this.quote.name ||= user.name;
+    this.quote.email ||= user.email;
+
     this.api.quote(this.quote).subscribe(() => {
       this.quoteSaved = true;
       this.quote = {
@@ -128,6 +166,15 @@ export class ContactComponent implements OnInit, OnDestroy {
         readyDate: '',
         message: ''
       };
+      this.prefillQuoteIdentity();
     });
+  }
+
+  private prefillQuoteIdentity() {
+    const user = this.auth.currentUser();
+    if (user?.role === 'CUSTOMER') {
+      this.quote.name ||= user.name;
+      this.quote.email ||= user.email;
+    }
   }
 }

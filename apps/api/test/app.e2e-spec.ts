@@ -25,6 +25,26 @@ describe('Elite Group API', () => {
     role: 'OPERATOR',
     active: true
   };
+  const customerUser = {
+    id: 'customer-1',
+    name: 'Customer User',
+    email: 'customer@gmail.com',
+    role: 'CUSTOMER',
+    active: true
+  };
+  const customerProfile = {
+    id: 'customer-profile-1',
+    userId: customerUser.id,
+    firstName: 'Customer',
+    lastName: 'User',
+    email: customerUser.email,
+    countryCode: '+20',
+    phoneNumber: '111222333',
+    companyName: 'Customer Logistics',
+    streetAddress: 'Port Road 12',
+    city: 'Alexandria',
+    countryRegion: 'Egypt'
+  };
 
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret';
@@ -37,6 +57,9 @@ describe('Elite Group API', () => {
         findMany: jest.fn().mockResolvedValue([adminUser, operatorUser]),
         create: jest.fn(),
         update: jest.fn()
+      },
+      customer: {
+        findUnique: jest.fn()
       },
       freightService: {
         findMany: jest.fn(),
@@ -93,6 +116,15 @@ describe('Elite Group API', () => {
       }
       if (where.email === operatorUser.email || where.id === operatorUser.id) {
         return Promise.resolve({ ...operatorUser, passwordHash: operatorPasswordHash });
+      }
+      if (where.email === customerUser.email || where.id === customerUser.id) {
+        return Promise.resolve({ ...customerUser, passwordHash: operatorPasswordHash });
+      }
+      return Promise.resolve(null);
+    });
+    prisma.customer.findUnique.mockImplementation(({ where }: { where: { userId?: string } }) => {
+      if (where.userId === customerUser.id) {
+        return Promise.resolve(customerProfile);
       }
       return Promise.resolve(null);
     });
@@ -202,6 +234,55 @@ describe('Elite Group API', () => {
     );
   });
 
+  it('registers Gmail customers and rejects non-Gmail registration', async () => {
+    const registeredEmail = 'newcustomer@gmail.com';
+    prisma.user.create.mockResolvedValueOnce({ ...customerUser, id: 'customer-2', email: registeredEmail });
+
+    await request(app.getHttpServer())
+      .post('/api/auth/register-customer')
+      .send({
+        firstName: 'Customer',
+        lastName: 'User',
+        countryCode: '+20',
+        phoneNumber: '111222333',
+        companyName: 'Customer Logistics',
+        streetAddress: 'Port Road 12',
+        city: 'Alexandria',
+        countryRegion: 'Egypt',
+        email: registeredEmail,
+        password: 'Customer@2026'
+      })
+      .expect(201);
+
+    expect(prisma.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          role: 'CUSTOMER',
+          email: registeredEmail,
+          customer: expect.objectContaining({
+            create: expect.objectContaining({ email: registeredEmail, companyName: 'Customer Logistics' })
+          })
+        })
+      })
+    );
+
+    await request(app.getHttpServer())
+      .post('/api/auth/register-customer')
+      .send({
+        firstName: 'Invalid',
+        lastName: 'Email',
+        countryCode: '+20',
+        phoneNumber: '111222333',
+        companyName: 'Customer Logistics',
+        streetAddress: 'Port Road 12',
+        city: 'Alexandria',
+        countryRegion: 'Egypt',
+        email: 'customer@example.com',
+        password: 'Customer@2026'
+      })
+      .expect(400);
+  });
+
   it('returns active container catalogue items from the public read-only endpoint', async () => {
     prisma.containerCatalogItem.findMany.mockResolvedValue([
       { id: 'catalog-1', slug: '20-standard-dry', group: 'DRY', active: true, sortOrder: 10 }
@@ -265,9 +346,8 @@ describe('Elite Group API', () => {
     await request(app.getHttpServer()).get('/api/public/tracking/ELT-PRIVATE-0002').expect(404);
   });
 
-  it('accepts visitor contact and quote requests', async () => {
+  it('accepts visitor contact and requires customer login for quote requests', async () => {
     prisma.contactMessage.create.mockResolvedValue({ id: 'contact-1' });
-    prisma.quoteRequest.create.mockResolvedValue({ id: 'quote-1' });
 
     await request(app.getHttpServer())
       .post('/api/public/contact-messages')
@@ -275,7 +355,7 @@ describe('Elite Group API', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .post('/api/public/quote-requests')
+      .post('/api/quote-requests')
       .send({
         name: 'Visitor',
         email: 'visitor@example.com',
@@ -284,6 +364,34 @@ describe('Elite Group API', () => {
         cargoType: 'Reefer Cargo',
         containerType: 'Reefer Container'
       })
+      .expect(401);
+  });
+
+  it('allows customers to create quote requests linked to their customer record', async () => {
+    const customerToken = await tokenFor(customerUser.email);
+    prisma.quoteRequest.create.mockResolvedValue({ id: 'quote-1', customerId: customerProfile.id });
+
+    await request(app.getHttpServer())
+      .post('/api/quote-requests')
+      .set('Authorization', `Bearer ${customerToken}`)
+      .send({
+        name: customerUser.name,
+        email: customerUser.email,
+        originPort: 'Jebel Ali',
+        destinationPort: 'Nhava Sheva',
+        cargoType: 'Reefer Cargo',
+        containerType: 'Reefer Container'
+      })
       .expect(201);
+
+    expect(prisma.quoteRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          customerId: customerProfile.id,
+          email: customerUser.email,
+          company: customerProfile.companyName
+        })
+      })
+    );
   });
 });

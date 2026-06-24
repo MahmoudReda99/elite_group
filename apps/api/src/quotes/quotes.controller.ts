@@ -11,9 +11,11 @@ import { QuotesService } from './quotes.service';
 export class QuotesController {
   constructor(private readonly quotesService: QuotesService) {}
 
-  @Post('public/quote-requests')
-  create(@Body() dto: CreateQuoteRequestDto) {
-    return this.quotesService.create(dto);
+  @Post('quote-requests')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
+  create(@Body() dto: CreateQuoteRequestDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.quotesService.create(dto, user);
   }
 
   @Get('quote-requests')

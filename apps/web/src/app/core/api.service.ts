@@ -12,6 +12,7 @@ import {
   FreightService,
   LoginResponse,
   QuoteRequest,
+  RegisterCustomerPayload,
   ServiceCategory,
   TrackingRecord,
   User
@@ -27,6 +28,10 @@ export class ApiService {
 
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, { email, password });
+  }
+
+  registerCustomer(payload: RegisterCustomerPayload): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/register-customer`, payload);
   }
 
   me(): Observable<User> {
@@ -98,7 +103,7 @@ export class ApiService {
   }
 
   quote(payload: Partial<QuoteRequest>): Observable<QuoteRequest> {
-    return this.http.post<QuoteRequest>(`${this.apiUrl}/public/quote-requests`, payload);
+    return this.http.post<QuoteRequest>(`${this.apiUrl}/quote-requests`, payload);
   }
 
   quotes(): Observable<QuoteRequest[]> {

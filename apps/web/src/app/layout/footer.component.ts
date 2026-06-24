@@ -13,14 +13,15 @@ import { RouterLink } from '@angular/router';
       </section>
       <section>
         <h3>Services</h3>
-        <a routerLink="/services/containers">Containers</a>
-        <a routerLink="/services/inland-transportation">Inland Transportation</a>
+        <a routerLink="/services/containers">Sea Freight</a>
+        <a routerLink="/services/inland-transportation">Domestic Transportation</a>
+        <a routerLink="/services/inland-transportation">International Transportation</a>
         <a routerLink="/services/customs-solutions">Customs Support & Solutions</a>
       </section>
       <section>
         <h3>Quick Links</h3>
         <a routerLink="/tracking">Tracking</a>
-        <a routerLink="/contact">Request a quote</a>
+        <a routerLink="/login" [queryParams]="{ returnUrl: '/contact', intent: 'quote' }">Request a quote</a>
       </section>
       <section>
         <h3>Contact</h3>
